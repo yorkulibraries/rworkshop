@@ -166,9 +166,6 @@ ggplot(ghg, aes(x = year, y = emissions)) + geom_col() + facet_wrap(~ sector)
 
 ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector))
 
-## Add labels
-ggplot(data, aes(x = year, y = emissions)) + geom_col(aes(fill = sector)) + labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", subtitle = "Megatonnes of carbon dioxide equivalent", x = "", y = "", caption = "Data from Environment and Climate Change Canada, 2019", fill = "")
-
 ## But the sectors are in alphabetical order
 ## (which is a very sensible default)
 ## We want it so biggest is at the bottom
