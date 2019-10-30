@@ -1,0 +1,215 @@
+---
+title: Viz workshop
+---
+
+# Introduction
+
+The goal here is to show how the [ggplot2](https://ggplot2.tidyverse.org/) system works (combining commands to build up a chart piece by piece), to show a variety of examples, and to recreate an existing chart in R.
+
+# Setup
+
+You can run these commands in base R or RStudio.
+
+``` {r}
+## Anything starting with ## is a comment, not code
+## Remove them if you want to run the line
+
+## install.packages("tidyverse") ## If not already done
+library(tidyverse) ## Will load ggplot2 and others
+```
+
+# Data: Canadian greenhouse gas emissions
+
+Here we will use [greenhouse gas emissions data from Environment and Climate Change Canada](https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html).
+
+The data they provide for download is messy, so we cleaned it up a bit to save time. This often happens.  You can clean the data in R (which is great for reproducibility) but we just did it in Excel and saved the data as a CSV (great for saving time).
+
+Even though the data is cleaned up, it's not "tidy," so we'll tidy it up so that each variable is a column, each observation is a row, and each value has its own cell.
+(See [this full description of tidy data](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html) for more.)  Basically, we'll take the data from being human-readable spreadsheet-style to being more machine-usable.
+
+# Get the data
+
+``` {r}
+## Download the data
+ghg_raw <- read_csv("https://raw.githubusercontent.com/yorkulibraries/rworkshop/master/ghg-cleaned.csv")
+
+## View the data
+## RStudio: click on variable name in upper right
+ghg_raw
+
+
+## We’re using the pipe and the tidyr package here,
+## but consider it magic for now.
+ghg <- ghg_raw %>% pivot_longer(-year, names_to = "sector", values_to = "emissions")
+
+## View it now
+## RStudio: click on variable name in uppper right
+ghg
+```
+
+# Scatter plots and box plots
+
+It's always nice to start with a scatter plot.  Here we'll do it by sector.
+
+``` {r}
+## Always a nice way to start: scatter plot
+## Here we’ll do it by sector
+ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_point()
+
+## Try just this: no points!
+ggplot(data = ghg, aes(x = sector, y = emissions))
+
+## Jitter it up
+ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_jitter()
+
+## Tighten the spread
+ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_jitter(width = 0.3)
+
+## Box plot (shows first and third quartiles, and median)
+## https://ggplot2.tidyverse.org/reference/geom_boxplot.html
+ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_boxplot()
+
+## Compare the oil_gas column to the summary data here
+ghg %>% filter(sector == "oil_gas") %>% summary()
+```
+
+# Exercise 1
+
+* Add `geom_jitter()` to add the points to the box plot.
+* What happens if you reverse the order and put `geom_jitter()` before `geom_boxplot()`?
+* What happened is because order matters in ggplot commands.
+* After trying this, try using geom_boxplot(alpha = 0.5) instead.  The alpha setting controls transparency.
+
+Box plots are useful summaries, but hide the shape of the distribution. For example, if the distribution is bimodal, we would not see it in a box plot. An alternative to the box plot is the violin plot, where the shape (of the density of points) is drawn.
+
+Try `geom_violin()` as well.
+
+Here’s one with some extra new stuff to try if you have time:
+
+``` {r}
+ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_jitter(width = 0.3, aes(size = year), alpha = 0.5)
+```
+
+# Points and lines
+
+``` {r}
+## Now we’ll put year on the x-axis
+## And we’ll leave out “data =” because it’s unnecessary
+
+## Scatter plot
+ggplot(ghg, aes(x = year, y = emissions)) + geom_point()
+
+## Just lines
+ggplot(ghg, aes(x = year, y = emissions)) + geom_line()
+
+## That didn’t work!
+## We need to connect it by sector, and
+## specifying colours is enough for R to know what to do
+ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector))
+
+## Lines and points
+ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector)) + geom_point()
+
+## Lines and shaped points
+ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector)) + geom_point(aes(shape = sector))
+
+## Lines and softer shaped points
+ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector)) + geom_point(aes(shape = sector), alpha = 0.2)
+
+## What does this do?
+ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% ggplot(aes(x = year, y = percent_change_to_base)) + geom_line(aes(colour = sector))
+```
+
+# Exercise 2
+
+* Try adding points to this new plot, like before, and also try it with an alpha setting.
+* Does this different presentation of the data give you a different understanding of the emissions by sector?
+
+Try picking that last command apart by just looking at the data produced by the `mutate` command.  You can even pipe this to `tail()` to see the bottom.
+
+``` {r}
+ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1])
+ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% tail()
+``` {r}
+
+
+# Bar plots
+
+``` {r}
+ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% tail()## Emissions are added up automatically
+ggplot(ghg, aes(x = year, y = emissions)) + geom_col()
+
+## Fill (with colour) by sector
+ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector))
+
+## Break it up by sector, dodge the bars
+ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector), position = "dodge")
+
+## Smaller portion of that
+ggplot(ghg %>% filter(year >= 2010), aes(x = year, y = emissions)) + geom_col(aes(fill = sector), position = "dodge")
+```
+
+# Exercise 3
+
+Try `position = "fill"` instead of "dodge". (This is different from the fill aesthetic.) What does that do?
+
+Try
+
+``` {r}
+ggplot(ghg, aes(x = year, y = emissions)) + geom_col() + facet_wrap(~ sector)
+```
+
+# Customizing the bar plot
+
+``` {r}
+## Back to basic bar plot
+
+ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector))
+
+## Add labels
+ggplot(data, aes(x = year, y = emissions)) + geom_col(aes(fill = sector)) + labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", subtitle = "Megatonnes of carbon dioxide equivalent", x = "", y = "", caption = "Data from Environment and Climate Change Canada, 2019", fill = "")
+
+## But the sectors are in alphabetical order
+## (which is a very sensible default)
+## We want it so biggest is at the bottom
+
+## Arrange the ordering
+
+## First, see what’s going on
+ghg %>% filter(year == 2017)
+ghg %>% filter(year == 2017) %>% arrange(emissions)
+ghg %>% filter(year == 2017) %>% arrange(emissions) %>% pull(sector)
+
+## Now save it and set it
+sector_order <- ghg %>% filter(year == 2017) %>% arrange(emissions) %>% pull(sector)
+sector_order
+
+## Make a copy; don’t change the original
+ghg_ordered <- ghg
+ghg_ordered$sector <- factor(ghg_ordered$sector, levels = sector_order)
+
+## Plot with reordered sectors
+## Add in labels while we’re at it
+ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector))
+
+## Add titles and labels
+ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector)) + labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", subtitle = "Megatonnes of carbon dioxide equivalent", x = "", y = "", caption = "Data from Environment and Climate Change Canada, 2019", fill = "")
+
+## Change colours and the overall look
+ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector)) + labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", subtitle = "Megatonnes of carbon dioxide equivalent", x = "", y = "", caption = "Data from Environment and Climate Change Canada, 2019", fill = "") + scale_fill_brewer(palette = "Paired") + theme_minimal()
+
+## Fix the names of the sectors
+levels(ghg_ordered$sector) <- c("Waste and others", "Agriculture", "Heavy industry", "Electricity", "Buildings", "Transportation", "Oil and gas")
+
+## Now rerun the previous plot
+ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector)) + labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", subtitle = "Megatonnes of carbon dioxide equivalent", x = "", y = "", caption = "Data from Environment and Climate Change Canada, 2019", fill = "") + scale_fill_brewer(palette = "Paired") + theme_minimal()
+
+```
+
+# Exercise 4
+
+Try customizing the plot further by setting the x- and y-axis labels and editing the titles and the caption.
+
+Try adding `position = "fill"` to `geom_col(aes(fill = sector))` (after the aesthetic, before the final brackets).
+
+Try it with `geom_line(aes(colour = sector))` instead of the `geom_col()`.  How does this make the data look different?
