@@ -1,14 +1,10 @@
 ---
-title: Viz workshop
+title: Introduction to Analyzing and Visualizing Data with R
 ---
 
-# Introduction
+# Analyzing data
 
-The goal here is to show how the [ggplot2](https://ggplot2.tidyverse.org/) system works (combining commands to build up a chart piece by piece), to show a variety of examples, and to recreate an existing chart in R.
-
-# Setup
-
-You can run these commands in base R or RStudio.
+## Setup
 
 ``` {r}
 ## Anything starting with ## is a comment, not code
@@ -17,17 +13,171 @@ You can run these commands in base R or RStudio.
 ## install.packages("tidyverse") ## If not already done
 library(tidyverse) ## Will load ggplot2 and others
 ```
+## Get the data (surveys)
 
-# Data: Canadian greenhouse gas emissions
+Use # to comment in scripts and R markdown.
 
-Here we will use [greenhouse gas emissions data from Environment and Climate Change Canada](https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html).
+``` {r}
+# Load the data for this lesson by using the read.csv function and assigning the dataset to an object named "surveys"
+surveys <- read.csv("http://kbroman.org/datacarp/portal_data_joined.csv")
+```
 
-The data they provide for download is messy, so we cleaned it up a bit to save time. This often happens.  You can clean the data in R (which is great for reproducibility) but we just did it in Excel and saved the data as a CSV (great for saving time).
+## Using R like a calculator
 
-Even though the data is cleaned up, it's not "tidy," so we'll tidy it up so that each variable is a column, each observation is a row, and each value has its own cell.
-(See [this full description of tidy data](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html) for more.)  Basically, we'll take the data from being human-readable spreadsheet-style to being more machine-usable.
+``` {r}
+# Using R like a calculator
+2020 - 1971
+2020 - 1946
 
-# Get the data
+8.95 * 1.13
+```
+
+## Inspecting data frames
+
+``` {r}
+# head: shows the top few rows
+head(surveys)
+```
+
+``` {r}
+# tail: shows the bottom few rows
+tail(surveys)
+```
+
+``` {r}
+# str shows the structure
+str(surveys)
+```
+
+##  Challenge #1
+
+Study the output of str(surveys). How are missing values being treated?
+
+Other useful ways of inspecting data frames:
+
+dim(surveys)
+ncol(surveys)
+nrow(surveys)
+names(surveys)
+colnames(surveys)
+rownames(surveys)
+summary(surveys)
+
+## Indexing
+
+Data frames have rows and columns, and there are various ways to get at one or the other or a specific cell.  When indexing, rows go first and columns second: you count down and then over.
+
+``` {r}
+surveys[1, 1]
+surveys[1, 7]
+surveys[10001, 7]
+surveys[2, ]
+surveys[2,]  # don't _need_ the spaces
+surveys[,7]
+```
+
+## Vectors
+
+``` {r}
+sex <- surveys[,7]
+sex <- surveys[, "sex"]
+sex <- surveys$sex
+sex <- surveys[["sex"]]
+```
+
+``` {r}
+# Pull out a single value from a vector
+sex[1]
+sex[10001]
+```
+
+``` {r}
+# Create a vector 
+c(1, 4, 6)
+```
+
+``` {r}
+# Pull out multiple values
+sex[c(1,4,6)] # Why are 4 and 6 not seen?
+```
+
+``` {r}
+sex[c(1, 10001)] # <- pull out 1st and 10001th.
+```
+
+``` {r}
+# More ways to create vectors
+1:10
+10:1
+sex[1:10]
+```
+
+#every 2nd value
+seq(1, 10, by=2)
+sex[seq(1,10, by=2)]
+
+#seq function
+?seq # help
+seq(1, 11)
+seq(1, 11, 2)
+seq(1, 11, by=2)
+seq(to=11, from=1, by=2)
+
+#first ten rows of surveys
+surveys[1:3,]
+surveys[10001:10003,]
+surveys[5:7, 1:7]
+
+## Challenge 2
+
+The function nrow() on a data.frame returns the number of rows.
+
+Use nrow(), in conjuction with seq() to create a new data.frame called surveys_by_10 that includes every 10th row of the survey data frame starting at row 10 (10, 20, 30, .)
+
+## Dealing with missing data
+heights <- c(2, 4, 4, NA, 6)
+mean(heights)
+max(heights)
+mean(heights, na.rm = TRUE)
+max(heights, na.rm = TRUE)
+na.omit (heights)
+
+surveys_noblanks <- read.csv("http://kbroman.org/datacarp/portal_data_joined.csv", na.strings="")
+
+###dplyr
+
+#load the dplyr package
+library(dplyr)
+
+#select some columns
+selected_col <- select(surveys, sex, species_id, plot_type, weight)
+head(selected_col)
+
+#filter out some rows
+selected_row <- filter(surveys, year == 2002)
+head(selected_row)
+
+#filter out some rows
+selected_row <- filter(surveys, year == 2002, weight>78)
+head(selected_row)
+
+selected_row <- filter(surveys, sex == "F", weight>78)
+head(selected_row)
+
+#pipe operator
+surveys %>%
+  filter(weight < 5) %>%
+  select(species_id, sex, weight)
+
+selected_rows <- filter(surveys, weight<5)
+result <- select(selected_rows, species_id, sex, weight)
+
+#Challenge #3
+#Using pipes, subset the data to include individuals collected before 1995, and retain the columns year, sex, and weight.
+
+
+
+## Get the data (GHG)
 
 ``` {r}
 ## Download the data
@@ -47,7 +197,42 @@ ghg <- ghg_raw %>% pivot_longer(-year, names_to = "sector", values_to = "emissio
 ghg
 ```
 
-# Scatter plots and box plots
+# Visualizing data
+
+## Introduction
+
+The goal here is to show how the [ggplot2](https://ggplot2.tidyverse.org/) system works (combining commands to build up a chart piece by piece), to show a variety of examples, and to recreate an existing chart in R.
+
+## Data: Canadian greenhouse gas emissions
+
+Here we will use [greenhouse gas emissions data from Environment and Climate Change Canada](https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html).
+
+The data they provide for download is messy, so we cleaned it up a bit to save time. This often happens.  You can clean the data in R (which is great for reproducibility) but we just did it in Excel and saved the data as a CSV (great for saving time).
+
+Even though the data is cleaned up, it's not "tidy," so we'll tidy it up so that each variable is a column, each observation is a row, and each value has its own cell.
+(See [this full description of tidy data](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html) for more.)  Basically, we'll take the data from being human-readable spreadsheet-style to being more machine-usable.
+
+## Get the data
+
+``` {r}
+## Download the data
+ghg_raw <- read_csv("https://raw.githubusercontent.com/yorkulibraries/rworkshop/master/ghg-cleaned.csv")
+
+## View the data
+## RStudio: click on variable name in upper right
+ghg_raw
+
+
+## We’re using the pipe and the tidyr package here,
+## but consider it magic for now.
+ghg <- ghg_raw %>% pivot_longer(-year, names_to = "sector", values_to = "emissions")
+
+## View it now
+## RStudio: click on variable name in uppper right
+ghg
+```
+
+## Scatter plots and box plots
 
 It's always nice to start with a scatter plot.  Here we'll do it by sector.
 
@@ -73,7 +258,7 @@ ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_boxplot()
 ghg %>% filter(sector == "oil_gas") %>% summary()
 ```
 
-# Exercise 1
+## Exercise 1
 
 * Add `geom_jitter()` to add the points to the box plot.
 * What happens if you reverse the order and put `geom_jitter()` before `geom_boxplot()`?
@@ -90,7 +275,7 @@ Here’s one with some extra new stuff to try if you have time:
 ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_jitter(width = 0.3, aes(size = year), alpha = 0.5)
 ```
 
-# Points and lines
+## Points and lines
 
 ``` {r}
 ## Now we’ll put year on the x-axis
@@ -120,7 +305,7 @@ ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector)) + ge
 ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% ggplot(aes(x = year, y = percent_change_to_base)) + geom_line(aes(colour = sector))
 ```
 
-# Exercise 2
+## Exercise 2
 
 * Try adding points to this new plot, like before, and also try it with an alpha setting.
 * Does this different presentation of the data give you a different understanding of the emissions by sector?
@@ -133,7 +318,7 @@ ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissio
 ``` {r}
 
 
-# Bar plots
+## Bar plots
 
 ``` {r}
 ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% tail()## Emissions are added up automatically
@@ -149,7 +334,7 @@ ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector), positio
 ggplot(ghg %>% filter(year >= 2010), aes(x = year, y = emissions)) + geom_col(aes(fill = sector), position = "dodge")
 ```
 
-# Exercise 3
+## Exercise 3
 
 Try `position = "fill"` instead of "dodge". (This is different from the fill aesthetic.) What does that do?
 
@@ -159,7 +344,7 @@ Try
 ggplot(ghg, aes(x = year, y = emissions)) + geom_col() + facet_wrap(~ sector)
 ```
 
-# Customizing the bar plot
+## Customizing the bar plot
 
 ``` {r}
 ## Back to basic bar plot
@@ -203,7 +388,7 @@ ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector))
 
 ```
 
-# Exercise 4
+## Exercise 4
 
 Try customizing the plot further by setting the x- and y-axis labels and editing the titles and the caption.
 
