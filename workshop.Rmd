@@ -1,26 +1,63 @@
 ---
 title: Introduction to Analyzing and Visualizing Data with R
+output: html_document
 ---
+
+# About R Markdown
+
+*To be done*.
+
+https://rmarkdown.rstudio.com/
+
+RStudio and R Markdown are a great combination for working, keeping notes, reproducible research and collaborating.  
+
+(You may also want to look at Jupyter Notebooks (https://jupyter.org/), which can be used with R, Julia or Python.)
 
 # Analyzing data
 
 ## Setup
 
-``` {r}
+``` {r Setup}
 ## Anything starting with ## is a comment, not code
 ## Remove them if you want to run the line
 
 ## install.packages("tidyverse") ## If not already done
 library(tidyverse) ## Will load ggplot2 and others
 ```
+
+# What is the Tidyverse?
+
+Indeed, what?
+
 ## Get the data (surveys)
 
 Use # to comment in scripts and R markdown.
 
-``` {r}
-# Load the data for this lesson by using the read.csv function and assigning the dataset to an object named "surveys"
-surveys <- read.csv("http://kbroman.org/datacarp/portal_data_joined.csv")
+``` {r Load data}
+# Load the data for this lesson by using the read_csv function (from the tidyverse) and assigning the dataset to an object named "surveys"
+surveys <- read_csv("http://kbroman.org/datacarp/portal_data_joined.csv")
 ```
+
+## Get the data (GHG)
+
+``` {r}
+## Download the data
+ghg_raw <- read_csv("https://raw.githubusercontent.com/yorkulibraries/rworkshop/master/ghg-cleaned.csv")
+
+## View the data
+## RStudio: click on variable name in upper right
+ghg_raw
+
+
+## We’re using the pipe and the tidyr package here,
+## but consider it magic for now.
+ghg <- ghg_raw %>% pivot_longer(-year, names_to = "sector", values_to = "emissions")
+
+## View it now
+## RStudio: click on variable name in uppper right
+ghg
+```
+
 
 ## Using R like a calculator
 
@@ -73,7 +110,7 @@ surveys[1, 7]
 surveys[10001, 7]
 surveys[2, ]
 surveys[2,]  # don't _need_ the spaces
-surveys[,7]
+surveys[,7]  # Helpful things with tibbles and RStudio make it easier to inspect this
 ```
 
 ## Vectors
@@ -132,15 +169,25 @@ surveys[5:7, 1:7]
 
 The function nrow() on a data.frame returns the number of rows.
 
-Use nrow(), in conjuction with seq() to create a new data.frame called surveys_by_10 that includes every 10th row of the survey data frame starting at row 10 (10, 20, 30, .)
+Use nrow(), in conjuction with seq() to create a new data frame called surveys_by_10 that includes every 10th row of the survey data frame starting at row 10 (10, 20, 30, .)
+
+``` {r}
+# How would you  make sequence that goes up by tens?
+# How would you use that to extract just those rows from surveys?
+# Try some code here.  Edit and rerun as you work on it.
+
+```
 
 ## Dealing with missing data
+
+``` {r}
 heights <- c(2, 4, 4, NA, 6)
 mean(heights)
 max(heights)
 mean(heights, na.rm = TRUE)
 max(heights, na.rm = TRUE)
 na.omit (heights)
+```
 
 surveys_noblanks <- read.csv("http://kbroman.org/datacarp/portal_data_joined.csv", na.strings="")
 
@@ -172,30 +219,9 @@ surveys %>%
 selected_rows <- filter(surveys, weight<5)
 result <- select(selected_rows, species_id, sex, weight)
 
-#Challenge #3
-#Using pipes, subset the data to include individuals collected before 1995, and retain the columns year, sex, and weight.
+# Challenge 3
 
-
-
-## Get the data (GHG)
-
-``` {r}
-## Download the data
-ghg_raw <- read_csv("https://raw.githubusercontent.com/yorkulibraries/rworkshop/master/ghg-cleaned.csv")
-
-## View the data
-## RStudio: click on variable name in upper right
-ghg_raw
-
-
-## We’re using the pipe and the tidyr package here,
-## but consider it magic for now.
-ghg <- ghg_raw %>% pivot_longer(-year, names_to = "sector", values_to = "emissions")
-
-## View it now
-## RStudio: click on variable name in uppper right
-ghg
-```
+Using pipes, subset the data to include individuals collected before 1995, and retain the columns year, sex, and weight.
 
 # Visualizing data
 
@@ -272,7 +298,8 @@ Try `geom_violin()` as well.
 Here’s one with some extra new stuff to try if you have time:
 
 ``` {r}
-ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_jitter(width = 0.3, aes(size = year), alpha = 0.5)
+ggplot(data = ghg, aes(x = sector, y = emissions)) + 
+  geom_jitter(width = 0.3, aes(size = year), alpha = 0.5)
 ```
 
 ## Points and lines
@@ -280,29 +307,55 @@ ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_jitter(width = 0.3, ae
 ``` {r}
 ## Now we’ll put year on the x-axis
 ## And we’ll leave out “data =” because it’s unnecessary
+```
 
 ## Scatter plot
+
+``` {r}
 ggplot(ghg, aes(x = year, y = emissions)) + geom_point()
+```
 
 ## Just lines
-ggplot(ghg, aes(x = year, y = emissions)) + geom_line()
 
-## That didn’t work!
-## We need to connect it by sector, and
-## specifying colours is enough for R to know what to do
+``` {r}
+ggplot(ghg, aes(x = year, y = emissions)) + geom_line()
+```
+
+That didn’t work!  We need to connect it by sector, and specifying colours is enough for R to know what to do
+
+``` {r}
 ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector))
+```
 
 ## Lines and points
+``` {r}
 ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector)) + geom_point()
+```
 
 ## Lines and shaped points
-ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector)) + geom_point(aes(shape = sector))
+``` {r}
+ggplot(ghg, aes(x = year, y = emissions)) + 
+  geom_line(aes(colour = sector)) + 
+  geom_point(aes(shape = sector))
+```
 
 ## Lines and softer shaped points
-ggplot(ghg, aes(x = year, y = emissions)) + geom_line(aes(colour = sector)) + geom_point(aes(shape = sector), alpha = 0.2)
+``` {r}
+ggplot(ghg, aes(x = year, y = emissions)) + 
+  geom_line(aes(colour = sector)) + 
+  geom_point(aes(shape = sector), alpha = 0.2)
+```
 
 ## What does this do?
-ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% ggplot(aes(x = year, y = percent_change_to_base)) + geom_line(aes(colour = sector))
+
+Can you guess from the code before you run it to see the chart?
+
+``` {r}
+ghg %>% 
+  group_by(sector) %>% 
+  mutate(percent_change_to_base = emissions / emissions[1]) %>% 
+  ggplot(aes(x = year, y = percent_change_to_base)) + 
+  geom_line(aes(colour = sector))
 ```
 
 ## Exercise 2
@@ -314,29 +367,36 @@ Try picking that last command apart by just looking at the data produced by the 
 
 ``` {r}
 ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1])
-ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% tail()
+```
 ``` {r}
-
+ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% tail()
+```
 
 ## Bar plots
 
 ``` {r}
 ghg %>% group_by(sector) %>% mutate(percent_change_to_base = emissions / emissions[1]) %>% tail()## Emissions are added up automatically
 ggplot(ghg, aes(x = year, y = emissions)) + geom_col()
+```
 
+``` {r}
 ## Fill (with colour) by sector
 ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector))
+```
 
+``` {r}
 ## Break it up by sector, dodge the bars
 ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector), position = "dodge")
+```
 
+``` {r}
 ## Smaller portion of that
 ggplot(ghg %>% filter(year >= 2010), aes(x = year, y = emissions)) + geom_col(aes(fill = sector), position = "dodge")
 ```
 
 ## Exercise 3
 
-Try `position = "fill"` instead of "dodge". (This is different from the fill aesthetic.) What does that do?
+Try `position = "fill"` instead of "dodge".  (This is different from the fill aesthetic.)  What does that do?
 
 Try
 
@@ -350,7 +410,9 @@ ggplot(ghg, aes(x = year, y = emissions)) + geom_col() + facet_wrap(~ sector)
 ## Back to basic bar plot
 
 ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector))
+```
 
+``` {r}
 ## But the sectors are in alphabetical order
 ## (which is a very sensible default)
 ## We want it so biggest is at the bottom
@@ -369,24 +431,65 @@ sector_order
 ## Make a copy; don’t change the original
 ghg_ordered <- ghg
 ghg_ordered$sector <- factor(ghg_ordered$sector, levels = sector_order)
+```
 
+``` {r Replot with reordered sectors}
 ## Plot with reordered sectors
 ## Add in labels while we’re at it
 ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector))
-
-## Add titles and labels
-ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector)) + labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", subtitle = "Megatonnes of carbon dioxide equivalent", x = "", y = "", caption = "Data from Environment and Climate Change Canada, 2019", fill = "")
-
-## Change colours and the overall look
-ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector)) + labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", subtitle = "Megatonnes of carbon dioxide equivalent", x = "", y = "", caption = "Data from Environment and Climate Change Canada, 2019", fill = "") + scale_fill_brewer(palette = "Paired") + theme_minimal()
-
-## Fix the names of the sectors
-levels(ghg_ordered$sector) <- c("Waste and others", "Agriculture", "Heavy industry", "Electricity", "Buildings", "Transportation", "Oil and gas")
-
-## Now rerun the previous plot
-ggplot(ghg_ordered, aes(x = year, y = emissions)) + geom_col(aes(fill = sector)) + labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", subtitle = "Megatonnes of carbon dioxide equivalent", x = "", y = "", caption = "Data from Environment and Climate Change Canada, 2019", fill = "") + scale_fill_brewer(palette = "Paired") + theme_minimal()
-
 ```
+
+``` {r Add titles and labels}
+## Add titles and labels
+ggplot(ghg_ordered, aes(x = year, y = emissions)) + 
+  geom_col(aes(fill = sector)) + 
+  labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", 
+        subtitle = "Megatonnes of carbon dioxide equivalent", 
+        x = "", 
+        y = "", 
+        caption = "Data from Environment and Climate Change Canada, 2019", 
+        fill = "")
+```
+
+``` {r}
+## Change colours and the overall look
+ggplot(ghg_ordered, aes(x = year, y = emissions)) + 
+  geom_col(aes(fill = sector)) + 
+  labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", 
+        subtitle = "Megatonnes of carbon dioxide equivalent", 
+        x = "", 
+        y = "", 
+        caption = "Data from Environment and Climate Change Canada, 2019", 
+        fill = "") + 
+  scale_fill_brewer(palette = "Paired") + 
+  theme_minimal()
+```
+
+``` {r}
+## Fix the names of the sectors
+levels(ghg_ordered$sector) <- c("Waste and others", 
+                                "Agriculture", 
+                                "Heavy industry", 
+                                "Electricity", 
+                                "Buildings", 
+                                "Transportation", 
+                                "Oil and gas")
+```
+
+``` {r}
+## Now rerun the previous plot
+ggplot(ghg_ordered, aes(x = year, y = emissions)) + 
+  geom_col(aes(fill = sector)) + 
+  labs (title = "Greenhouse gas emissions by economic sector, Canada, 1990 to 2017", 
+        subtitle = "Megatonnes of carbon dioxide equivalent", 
+        x = "", 
+        y = "", 
+        caption = "Data from Environment and Climate Change Canada, 2019", 
+        fill = "") + 
+  scale_fill_brewer(palette = "Paired") + 
+  theme_minimal()
+```
+
 
 ## Exercise 4
 
