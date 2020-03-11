@@ -3,9 +3,9 @@ title: Introduction to Analyzing and Visualizing Data with R
 output: html_document
 ---
 
-# About R Markdown
+# About R Markdown and RStudio
 
-*To be done*.
+*To be done*.  Show some exciting magic.
 
 https://rmarkdown.rstudio.com/
 
@@ -13,23 +13,32 @@ RStudio and R Markdown are a great combination for working, keeping notes, repro
 
 (You may also want to look at Jupyter Notebooks (https://jupyter.org/), which can be used with R, Julia or Python.)
 
-# Analyzing data
+Review the RStudio panes.  Explain about how some output will appear in this buffer, but there's also output in the console below.  
 
-## Setup
+# Setup
+
+Please run these two commands.  It will make things easier right away, but we'll explain why a little later.
+
+This installs the *tidyverse* package.  (You only need to do this once on your machine.  This is like installing a program.)
 
 ``` {r Setup}
 ## Anything starting with ## is a comment, not code
 ## Remove them if you want to run the line
 
-## install.packages("tidyverse") ## If not already done
+install.packages("tidyverse") ## If not already done
+```
+
+And this loads it in so we can use it.  (You'll need to do this every time you start up RStudio fresh.  This is like using an installed program.)
+
+``` {r Setup}
 library(tidyverse) ## Will load ggplot2 and others
 ```
 
-# What is the Tidyverse?
+# Get the data 
 
-Indeed, what?
+We'll be using two different data sets so we can show differences in how qualitative and quantitative data are handled, what to do about missing values, and so on.
 
-## Get the data (surveys)
+## Survey data 
 
 Use # to comment in scripts and R markdown.
 
@@ -38,7 +47,13 @@ Use # to comment in scripts and R markdown.
 surveys <- read_csv("http://kbroman.org/datacarp/portal_data_joined.csv")
 ```
 
-## Get the data (GHG)
+## Greenhouse gas emissions
+
+Another example data set we'll use is [greenhouse gas emissions data from Environment and Climate Change Canada](https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html).
+
+The data they provide for download is messy, so we cleaned it up a bit to save time. 
+
+BILL: Change this so they load in tidy data.
 
 ``` {r}
 ## Download the data
@@ -58,15 +73,18 @@ ghg <- ghg_raw %>% pivot_longer(-year, names_to = "sector", values_to = "emissio
 ghg
 ```
 
+# Analyzing data
 
 ## Using R like a calculator
 
 ``` {r}
 # Using R like a calculator
-2020 - 1971
-2020 - 1946
+2020 - 1971  # How old is Justin Trudeau this year?
 
-8.95 * 1.13
+9.95 * 1.13  # Cost of a paperback after tax
+
+pi * 2^2  # Area of a circle of radius 2
+
 ```
 
 ## Inspecting data frames
@@ -86,7 +104,9 @@ tail(surveys)
 str(surveys)
 ```
 
-##  Challenge #1
+##  Challenge 1
+
+(Explain how to make a new little code block as a workspace.)
 
 Study the output of str(surveys). How are missing values being treated?
 
@@ -191,12 +211,14 @@ na.omit (heights)
 
 surveys_noblanks <- read.csv("http://kbroman.org/datacarp/portal_data_joined.csv", na.strings="")
 
-###dplyr
+## What is the Tidyverse?
 
-#load the dplyr package
-library(dplyr)
+Indeed, what?  Brief explanation.  Get ready for pipes.
 
-#select some columns
+## Filtering
+
+``` {r}
+# select some columns
 selected_col <- select(surveys, sex, species_id, plot_type, weight)
 head(selected_col)
 
@@ -218,8 +240,9 @@ surveys %>%
 
 selected_rows <- filter(surveys, weight<5)
 result <- select(selected_rows, species_id, sex, weight)
+```
 
-# Challenge 3
+## Challenge 3
 
 Using pipes, subset the data to include individuals collected before 1995, and retain the columns year, sex, and weight.
 
@@ -231,14 +254,9 @@ The goal here is to show how the [ggplot2](https://ggplot2.tidyverse.org/) syste
 
 ## Data: Canadian greenhouse gas emissions
 
-Here we will use [greenhouse gas emissions data from Environment and Climate Change Canada](https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/greenhouse-gas-emissions.html).
+We already have the data.
 
-The data they provide for download is messy, so we cleaned it up a bit to save time. This often happens.  You can clean the data in R (which is great for reproducibility) but we just did it in Excel and saved the data as a CSV (great for saving time).
-
-Even though the data is cleaned up, it's not "tidy," so we'll tidy it up so that each variable is a column, each observation is a row, and each value has its own cell.
-(See [this full description of tidy data](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html) for more.)  Basically, we'll take the data from being human-readable spreadsheet-style to being more machine-usable.
-
-## Get the data
+TODO:  Go back and explain about wide versus tall data and how we tidied it up.
 
 ``` {r}
 ## Download the data
@@ -262,6 +280,8 @@ ghg
 
 It's always nice to start with a scatter plot.  Here we'll do it by sector.
 
+TODO:  Break these up into one bit of code per chunk.
+
 ``` {r}
 ## Always a nice way to start: scatter plot
 ## Here we’ll do it by sector
@@ -284,7 +304,7 @@ ggplot(data = ghg, aes(x = sector, y = emissions)) + geom_boxplot()
 ghg %>% filter(sector == "oil_gas") %>% summary()
 ```
 
-## Exercise 1
+## Challenge
 
 * Add `geom_jitter()` to add the points to the box plot.
 * What happens if you reverse the order and put `geom_jitter()` before `geom_boxplot()`?
@@ -358,7 +378,7 @@ ghg %>%
   geom_line(aes(colour = sector))
 ```
 
-## Exercise 2
+## Challenge
 
 * Try adding points to this new plot, like before, and also try it with an alpha setting.
 * Does this different presentation of the data give you a different understanding of the emissions by sector?
@@ -394,7 +414,7 @@ ggplot(ghg, aes(x = year, y = emissions)) + geom_col(aes(fill = sector), positio
 ggplot(ghg %>% filter(year >= 2010), aes(x = year, y = emissions)) + geom_col(aes(fill = sector), position = "dodge")
 ```
 
-## Exercise 3
+## Challenge
 
 Try `position = "fill"` instead of "dodge".  (This is different from the fill aesthetic.)  What does that do?
 
@@ -491,10 +511,20 @@ ggplot(ghg_ordered, aes(x = year, y = emissions)) +
 ```
 
 
-## Exercise 4
+## Challenge
 
 Try customizing the plot further by setting the x- and y-axis labels and editing the titles and the caption.
 
 Try adding `position = "fill"` to `geom_col(aes(fill = sector))` (after the aesthetic, before the final brackets).
 
 Try it with `geom_line(aes(colour = sector))` instead of the `geom_col()`.  How does this make the data look different?
+
+# Exporting from RStudio
+
+Knitting; exporting to HTML and PDF.  
+
+A bit about using RStudio as a living notebook for research and notes, etc.
+
+
+
+
